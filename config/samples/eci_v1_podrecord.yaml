@@ -1,0 +1,9 @@
+apiVersion: eci.eci.cds/v1
+kind: PodRecord
+metadata:
+  labels:
+    app.kubernetes.io/name: eci-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: podrecord-sample
+spec:
+  # TODO(user): Add fields here

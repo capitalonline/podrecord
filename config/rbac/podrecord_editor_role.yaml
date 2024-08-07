@@ -1,0 +1,27 @@
+# permissions for end users to edit podrecords.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: eci-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: podrecord-editor-role
+rules:
+- apiGroups:
+  - eci.eci.cds
+  resources:
+  - podrecords
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - eci.eci.cds
+  resources:
+  - podrecords/status
+  verbs:
+  - get

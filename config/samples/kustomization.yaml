@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- eci_v1_podrecord.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
