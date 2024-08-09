@@ -40,7 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -116,7 +115,7 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if pod.Status.Phase == "" {
 			records := eciv1.PodRecordList{}
 			if err := r.List(ctx, &records, &client.ListOptions{
-				FieldSelector: fields.OneTermEqualSelector("spec.podName", req.Name),
+				FieldSelector: fields.OneTermEqualSelector(constants.FieldSelectorPodName, req.Name),
 				Namespace:     req.Namespace,
 			}); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed to list eci-records, error: %v", err)
@@ -135,7 +134,7 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			klog.Infof("update pod return nil %s, record name is nil", pod.Name)
 			return ctrl.Result{}, nil
 		}
-		record.Spec.EndTime = time.Now().Format("2006-01-02 15:04:05")
+		record.Spec.EndTime = time.Now().Format(constants.TimeTemplate)
 		record.Spec.EndStatus = string(pod.Status.Phase)
 		if pod.Status.Phase == "" {
 			record.Spec.EndStatus = constants.PodStatusDeleted
@@ -177,14 +176,14 @@ func (r *PodRecordReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *PodRecordReconciler) exclude(rules []ExcludeRules, pod *v1.Pod) bool {
-
 	for _, rule := range rules {
 		switch rule.Kind {
-		case "Pod":
+		case constants.ResourcePod:
 			if rule.Name == pod.Name && rule.Namespace == pod.Namespace {
 				return true
 			}
-		case "StatefulSet", "Deployment", "DaemonSet", "ReplicaSet":
+		case constants.ResourceStatefulSet, constants.ResourceDeployment,
+			constants.ResourceDaemonSet, constants.ResourceReplicaSet:
 			if r.matchReferences(pod.OwnerReferences, rule, pod.Namespace) {
 				return true
 			}
@@ -193,28 +192,78 @@ func (r *PodRecordReconciler) exclude(rules []ExcludeRules, pod *v1.Pod) bool {
 	return false
 }
 
+func (r *PodRecordReconciler) ownerReferences(reference metav1.OwnerReference, ns string) ([]metav1.OwnerReference, error) {
+	if reference.Name == "" {
+		return []metav1.OwnerReference{}, nil
+	}
+	ctx := context.Background()
+	var references []metav1.OwnerReference
+	nsName := types.NamespacedName{Namespace: ns, Name: reference.Name}
+	switch reference.Kind {
+	case constants.ResourcePod:
+		pod := v1.Pod{}
+		if err := r.Get(ctx, nsName, &pod); err != nil {
+			return nil, err
+		}
+		references = pod.OwnerReferences
+	case constants.ResourceDeployment:
+		deploy := appv1.Deployment{}
+		if err := r.Get(ctx, nsName, &deploy); err != nil {
+			return nil, err
+		}
+		references = deploy.OwnerReferences
+	case constants.ResourceStatefulSet:
+		sts := appv1.StatefulSet{}
+		if err := r.Get(ctx, nsName, &sts); err != nil {
+			return nil, err
+		}
+		references = sts.OwnerReferences
+	case constants.ResourceReplicaSet:
+		rs := appv1.ReplicaSet{}
+		if err := r.Get(ctx, nsName, &rs); err != nil {
+			return nil, err
+		}
+		references = rs.OwnerReferences
+	case constants.ResourceDaemonSet:
+		ds := appv1.DaemonSet{}
+		if err := r.Get(ctx, nsName, &ds); err != nil {
+			return nil, err
+		}
+		references = ds.OwnerReferences
+	}
+	if len(references) == 0 {
+		return []metav1.OwnerReference{reference}, nil
+	}
+	list := make([]metav1.OwnerReference, 0)
+	for i := 0; i < len(references); i++ {
+		ref := references[i]
+		if ref.Name == "" {
+			continue
+		}
+		subRef, err := r.ownerReferences(ref, ns)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, subRef...)
+	}
+	return list, nil
+}
+
 func (r *PodRecordReconciler) matchReferences(references []metav1.OwnerReference, rule ExcludeRules, ns string) bool {
+
 	for _, reference := range references {
-		if reference.Kind == "Node" {
+		if reference.Kind == constants.ResourceNode {
 			return true
 		}
-		if strings.Contains(rule.Name, "coredns") && strings.Contains(rule.Name, "coredns") {
-			rs := appv1.ReplicaSet{}
-			if err := r.Get(context.Background(), types.NamespacedName{
-				Namespace: "kube-system",
-				Name:      reference.Name,
-			}, &rs); err != nil {
-				return false
-			}
-			for i := 0; i < len(rs.OwnerReferences); i++ {
-				owner := rs.OwnerReferences[i]
-				if owner.Kind == rule.Kind && rule.Name == owner.Name {
-					return true
-				}
-			}
+		list, err := r.ownerReferences(reference, ns)
+		if err != nil {
+			return false
 		}
-		if rule.Kind == reference.Kind && rule.Name == reference.Name && ns == rule.Namespace {
-			return true
+		for i := 0; i < len(list); i++ {
+			ref := list[i]
+			if rule.Kind == ref.Kind && rule.Name == ref.Name && ns == rule.Namespace {
+				return true
+			}
 		}
 	}
 	return false
@@ -239,7 +288,6 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 	cpuRequest := utils.PodCpuRequest(pod)
 	memRequest := float64(utils.PodMemRequest(pod)) / 1024 / 1024 / 1024
 	//memRequest = float64(memRequest)
-
 	return &eciv1.PodRecord{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%d", time.Now().UnixNano()),
@@ -251,15 +299,17 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 			PodID:      string(pod.UID),
 			PodName:    pod.Name,
 			CpuRequest: strconv.FormatInt(cpuRequest, 10),
-			MemRequest: fmt.Sprintf("%.2f", memRequest),
+			//MemRequest: fmt.Sprintf("%.2f", memRequest),
+			MemRequest: fmt.Sprintf("%f", utils.Round(memRequest, 2)),
 			CpuLimit:   strconv.FormatInt(cpuLimit, 10),
-			MemLimit:   fmt.Sprintf("%.2f", memLimit),
-			Gpu:        utils.PodGpuNvidia(pod),
-			Node:       node.Name,
-			NodeMem:    fmt.Sprintf("%.2f", nodeMem),
-
+			//MemLimit:   fmt.Sprintf("%.2f", memLimit),
+			MemLimit: fmt.Sprintf("%f", utils.Round(memLimit, 2)),
+			Gpu:      utils.PodGpuNvidia(pod),
+			Node:     node.Name,
+			//NodeMem:    fmt.Sprintf("%.2f", nodeMem),
+			NodeMem:   fmt.Sprintf("%f", utils.Round(nodeMem, 2)),
 			NodeCpu:   nodeCpu.String(),
-			StartTime: pod.Status.StartTime.Time.String(),
+			StartTime: pod.Status.StartTime.Time.Format(constants.TimeTemplate),
 		},
 	}, nil
 }

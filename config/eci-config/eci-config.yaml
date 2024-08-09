@@ -31,11 +31,6 @@ data:
         "namespace": "kube-system"
     },
     {
-        "kind": "DaemonSet",
-        "name": "ebs-disk-csi-cds-node",
-        "namespace": "kube-system"
-    },
-    {
         "kind": "StatefulSet",
         "name": "ebs-disk-csi-cds-controller",
         "namespace": "kube-system"

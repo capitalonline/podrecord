@@ -1,6 +1,9 @@
 package utils
 
-import v1 "k8s.io/api/core/v1"
+import (
+	v1 "k8s.io/api/core/v1"
+	"math"
+)
 
 func PodCpuLimit(pod v1.Pod) int64 {
 	var cpu int64
@@ -40,4 +43,8 @@ func PodGpuNvidia(pod v1.Pod) int64 {
 		gpuNum += container.Resources.Limits.Name("nvidia.com/gpu", "0").Value()
 	}
 	return gpuNum
+}
+
+func Round(num float64, places int) float64 {
+	return math.Round(num*math.Pow(10, float64(places))) / math.Pow(10, float64(places))
 }

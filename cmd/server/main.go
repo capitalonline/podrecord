@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/capitalonline/eci-manager/internal/constants"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
@@ -160,12 +161,12 @@ func main() {
 	excludeRules := func(client client.Client) []controller.ExcludeRules {
 		cm := v1.ConfigMap{}
 		if err := client.Get(context.Background(), types.NamespacedName{
-			Namespace: "kube-system",
-			Name:      "eci-config",
+			Namespace: constants.NamespaceKubeSystem,
+			Name:      constants.EciConfig,
 		}, &cm); err != nil {
 			panic(fmt.Errorf("get eci-config configmap failed, error: %v", err))
 		}
-		excludeRules := make([]controller.ExcludeRules, 0, 10)
+		excludeRules := make([]controller.ExcludeRules, 0)
 		if err := json.Unmarshal([]byte(cm.Data["exclude"]), &excludeRules); err != nil {
 			panic(fmt.Errorf("unmarshal exclude rules failed, error: %v", err))
 		}
@@ -203,7 +204,7 @@ func main() {
 	}
 
 	podController.ExcludeRules = excludeRules(mgr.GetClient())
-	if err = mgr.GetFieldIndexer().IndexField(ctx, &eciv1.PodRecord{}, "spec.podName", func(object client.Object) []string {
+	if err = mgr.GetFieldIndexer().IndexField(ctx, &eciv1.PodRecord{}, constants.FieldSelectorPodName, func(object client.Object) []string {
 		podRecord, ok := object.(*eciv1.PodRecord)
 		if !ok {
 			return []string{}
@@ -214,4 +215,5 @@ func main() {
 		os.Exit(1)
 	}
 	<-ctx.Done()
+	os.Exit(0)
 }
