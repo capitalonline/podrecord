@@ -1,9 +1,124 @@
-apiVersion: eci.eci.cds/v1
-kind: PodRecord
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  labels:
-    app.kubernetes.io/name: eci-manager
-    app.kubernetes.io/managed-by: kustomize
-  name: podrecord-sample
+  name: podrecord-manager
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: podrecord-manager
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: podrecord-manager
+subjects:
+  - kind: ServiceAccount
+    name: podrecord-manager
+    namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: podrecord-manager
+  namespace: kube-system
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - "pods"
+      - "configmaps"
+      - "nodes"
+    verbs:
+      - "get"
+      - "watch"
+      - "list"
+      - "update"
+      - "create"
+      - "patch"
+  - apiGroups:
+      - "apps"
+    resources:
+      - "statefulsets"
+      - "daemonsets"
+      - "deployments"
+      - "replicasets"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+  - apiGroups:
+      - "eci.eci.cds"
+    resources:
+      - "podrecords"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+      - "update"
+      - "create"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podrecord-manager
+  namespace: kube-system
 spec:
-  # TODO(user): Add fields here
+  replicas: 1
+  selector:
+    matchLabels:
+      app: podrecord-manager
+  template:
+    metadata:
+      labels:
+        app: podrecord-manager
+    spec:
+      containers:
+        - name: podrecord-manager
+          args:
+            - -customer-id=xxxx
+          image: harbor-dev.yun-paas.com/test/podrecord:v1.0.0
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+      dnsPolicy: Default
+      hostNetwork: true
+      serviceAccountName: podrecord-manager
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - podrecord
+              topologyKey: kubernetes.io/hostname
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+          operator: Exists
+        - key: node-role.eks.net/infra
+          operator: Exists
+          effect: NoSchedule
+        - effect: NoExecute
+          key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 30
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+          tolerationSeconds: 30
+        - key: node.cloudprovider.kubernetes.io/uninitialized
+          operator: Exists
+        - key: node-role.kubernetes.io/master
+          operator: Exists

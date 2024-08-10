@@ -19,7 +19,6 @@ package controller
 import (
 	"cmp"
 	"context"
-	"encoding/json"
 	"fmt"
 	eciv1 "github.com/capitalonline/eci-manager/api/v1"
 	"github.com/capitalonline/eci-manager/internal/constants"
@@ -75,7 +74,6 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if pod.Labels != nil {
-		klog.Infof("pod.Labels: %v", pod.Labels)
 		if err := r.Get(ctx, types.NamespacedName{
 			Namespace: req.Namespace,
 			Name:      pod.Labels[constants.LabelPodEciRecord],
@@ -89,16 +87,13 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if record.Name != "" {
 			return ctrl.Result{}, nil
 		}
-		klog.Infof("pod %s is running", pod.Name)
 		newRecord, err := r.newRecord(pod)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to create eci-record, error: %v", err)
 		}
-		klog.Infof("1")
 		if pod.Labels == nil {
 			pod.Labels = make(map[string]string)
 		}
-		klog.Infof("2")
 		patch := client.StrategicMergeFrom(pod.DeepCopy())
 		pod.Labels[constants.LabelPodEciRecord] = newRecord.Name
 		if err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -129,7 +124,6 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			})
 			record = records.Items[0]
 		}
-		klog.Infof("pod %s is %s", pod.Name, pod.Status.Phase)
 		if record.Name == "" {
 			klog.Infof("update pod return nil %s, record name is nil", pod.Name)
 			return ctrl.Result{}, nil
@@ -155,12 +149,9 @@ func (r *PodRecordReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		if !ok {
 			return nil
 		}
-		klog.Info(fmt.Sprintf("pod %s exclude: %v", pod.Name, r.exclude(r.ExcludeRules, pod)))
 		if r.exclude(r.ExcludeRules, pod) {
 			return nil
 		}
-		bytes, _ := json.Marshal(pod)
-		klog.Infof("enqueue pod %s", string(bytes))
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				Namespace: pod.Namespace,
@@ -299,17 +290,14 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 			PodID:      string(pod.UID),
 			PodName:    pod.Name,
 			CpuRequest: strconv.FormatInt(cpuRequest, 10),
-			//MemRequest: fmt.Sprintf("%.2f", memRequest),
 			MemRequest: fmt.Sprintf("%.2f", utils.Round(memRequest, 2)),
 			CpuLimit:   strconv.FormatInt(cpuLimit, 10),
-			//MemLimit:   fmt.Sprintf("%.2f", memLimit),
-			MemLimit: fmt.Sprintf("%.2f", utils.Round(memLimit, 2)),
-			Gpu:      utils.PodGpuNvidia(pod),
-			Node:     node.Name,
-			//NodeMem:    fmt.Sprintf("%.2f", nodeMem),
-			NodeMem:   fmt.Sprintf("%.2f", utils.Round(nodeMem, 2)),
-			NodeCpu:   nodeCpu.String(),
-			StartTime: pod.Status.StartTime.Time.Format(constants.TimeTemplate),
+			MemLimit:   fmt.Sprintf("%.2f", utils.Round(memLimit, 2)),
+			Gpu:        utils.PodGpuNvidia(pod),
+			Node:       node.Name,
+			NodeMem:    fmt.Sprintf("%.2f", utils.Round(nodeMem, 2)),
+			NodeCpu:    nodeCpu.String(),
+			StartTime:  pod.Status.StartTime.Time.Format(constants.TimeTemplate),
 		},
 	}, nil
 }
