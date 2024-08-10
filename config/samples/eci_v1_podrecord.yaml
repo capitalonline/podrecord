@@ -77,7 +77,6 @@ spec:
       containers:
         - name: podrecord-manager
           args:
-            - /manager
             - -customer-id=xxxx
           image: harbor-dev.yun-paas.com/test/podrecord:v1.0.0
           imagePullPolicy: Always
