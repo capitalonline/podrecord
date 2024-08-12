@@ -260,6 +260,7 @@ func (r *PodRecordReconciler) matchReferences(references []metav1.OwnerReference
 		}
 		refs, err := r.ownerReferences(reference, ns)
 		if err != nil {
+			klog.Errorf("getReferences error %v:", err)
 			return false
 		}
 		list = append(list, refs...)
