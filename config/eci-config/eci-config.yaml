@@ -34,5 +34,135 @@ data:
         "kind": "StatefulSet",
         "name": "ebs-disk-csi-cds-controller",
         "namespace": "kube-system"
+    },
+        {
+        "kind": "Deployment",
+        "name": "podrecord-manager",
+        "namespace": "kube-system"
+    },
+    {
+        "kind": "DaemonSet",
+        "name": "kube-vip",
+        "namespace": "kube-system"
+    },
+        {
+        "kind": "Deployment",
+        "name": "metrics-server",
+        "namespace": "kube-system"
+    },
+    {
+        "kind": "DaemonSet",
+        "name": "nvidia-device-plugin-daemonset",
+        "namespace": "kube-system"
+    },
+    {
+        "kind": "DaemonSet",
+        "name": "oss-csi-cds-node",
+        "namespace": "kube-system"
+    },
+    {
+        "kind": "Deployment",
+        "name": "dashboard-metrics-scraper",
+        "namespace": "kubernetes-dashboard"
+    },
+    {
+        "kind": "Deployment",
+        "name": "kubernetes-dashboard",
+        "namespace": "kubernetes-dashboard"
+    },
+    {
+        "kind": "Deployment",
+        "name": "tigera-operator",
+        "namespace": "tigera-operator"
+    },
+    {
+        "kind": "Deployment",
+        "name": "calico-apiserver",
+        "namespace": "calico-apiserver"
+    },
+    {
+        "kind": "Deployment",
+        "name": "calico-apiserver",
+        "namespace": "calico-kube-controllers"
+    },
+    {
+        "kind": "Deployment",
+        "name": "calico-apiserver",
+        "namespace": "calico-kube-controllers"
+    },
+    {
+        "kind": "DaemonSet",
+        "name": "calico-node",
+        "namespace": "calico-system"
+    },
+    {
+        "kind": "Deployment",
+        "name": "calico-typha",
+        "namespace": "calico-system"
+    },
+    {
+        "kind": "DaemonSet",
+        "name": "csi-node-driver",
+        "namespace": "calico-system"
+    },
+    {
+        "kind": "Deployment",
+        "name": "ingress-nginx-controller",
+        "namespace": "ingress-nginx"
+    },
+    {
+        "kind": "Deployment",
+        "name": "cluster-autoscaler",
+        "namespace": "kube-system"
+    },
+    {
+        "kind": "StatefulSet",
+        "name": "alertmanager-main",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "Deployment",
+        "name": "blackbox-exporter",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "Deployment",
+        "name": "grafana",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "Deployment",
+        "name": "kube-state-metrics",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "DaemonSet",
+        "name": "node-exporter",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "Deployment",
+        "name": "kube-state-metrics",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "DaemonSet",
+        "name": "nvidia-gpu-exporter",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "Deployment",
+        "name": "prometheus-adapter",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "StatefulSet",
+        "name": "prometheus-k8s",
+        "namespace": "monitoring"
+    },
+    {
+        "kind": "StatefulSet",
+        "name": "prometheus-operator",
+        "namespace": "monitoring"
     }
 ]'
