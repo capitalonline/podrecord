@@ -37,4 +37,4 @@ COPY --from=builder /workspace/podrecord/manager .
 COPY --from=builder /workspace/podrecord/tool .
 USER 65532:65532
 
-CMD ["/workspace/podrecord/manager"]
+CMD ["/manager"]
