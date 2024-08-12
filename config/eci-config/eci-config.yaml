@@ -27,12 +27,12 @@ data:
     },
     {
         "kind": "DaemonSet",
-        "name": "ebs-disk-csi-cds-node",
+        "name": "eks-disk-csi-cds-node",
         "namespace": "kube-system"
     },
     {
         "kind": "StatefulSet",
-        "name": "ebs-disk-csi-cds-controller",
+        "name": "eks-disk-csi-cds-controller",
         "namespace": "kube-system"
     },
         {
@@ -42,7 +42,7 @@ data:
     },
     {
         "kind": "DaemonSet",
-        "name": "kube-vip",
+        "name": "kube-vip-ds",
         "namespace": "kube-system"
     },
         {
@@ -82,13 +82,8 @@ data:
     },
     {
         "kind": "Deployment",
-        "name": "calico-apiserver",
-        "namespace": "calico-kube-controllers"
-    },
-    {
-        "kind": "Deployment",
-        "name": "calico-apiserver",
-        "namespace": "calico-kube-controllers"
+        "name": "calico-kube-controllers",
+        "namespace": "calico-system"
     },
     {
         "kind": "DaemonSet",
@@ -161,8 +156,13 @@ data:
         "namespace": "monitoring"
     },
     {
-        "kind": "StatefulSet",
+        "kind": "Deployment",
         "name": "prometheus-operator",
         "namespace": "monitoring"
+    },
+    {
+        "kind": "Deployment",
+        "name": "eks-cloud-controller-manager",
+        "namespace": "kube-system"
     }
 ]'

@@ -136,7 +136,7 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err := r.Update(ctx, &record); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to update eci-record, error: %v", err)
 		}
-		klog.Infof("record %s update success", record.Name)
+		//klog.Infof("record %s update success", record.Name)
 	}
 	return ctrl.Result{}, nil
 }
@@ -149,9 +149,12 @@ func (r *PodRecordReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		if !ok {
 			return nil
 		}
+
 		if r.exclude(r.ExcludeRules, pod) {
 			return nil
 		}
+		//bytes, _ := json.Marshal(pod)
+		//klog.Infof("pod %s dont exclude", string(bytes))
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				Namespace: pod.Namespace,
@@ -222,13 +225,18 @@ func (r *PodRecordReconciler) ownerReferences(reference metav1.OwnerReference, n
 		}
 		references = ds.OwnerReferences
 	}
-	if len(references) == 0 {
-		return []metav1.OwnerReference{reference}, nil
-	}
+
 	list := make([]metav1.OwnerReference, 0)
 	for i := 0; i < len(references); i++ {
 		ref := references[i]
 		if ref.Name == "" {
+			continue
+		}
+		if ref.Kind != constants.ResourceDeployment &&
+			ref.Kind != constants.ResourceDaemonSet &&
+			ref.Kind != constants.ResourceStatefulSet &&
+			ref.Kind != constants.ResourceReplicaSet &&
+			ref.Kind != constants.ResourcePod {
 			continue
 		}
 		subRef, err := r.ownerReferences(ref, ns)
@@ -237,24 +245,28 @@ func (r *PodRecordReconciler) ownerReferences(reference metav1.OwnerReference, n
 		}
 		list = append(list, subRef...)
 	}
+	if len(list) == 0 {
+		return []metav1.OwnerReference{reference}, nil
+	}
 	return list, nil
 }
 
 func (r *PodRecordReconciler) matchReferences(references []metav1.OwnerReference, rule ExcludeRules, ns string) bool {
-
+	defer fmt.Print("")
+	list := make([]metav1.OwnerReference, 0)
 	for _, reference := range references {
 		if reference.Kind == constants.ResourceNode {
 			return true
 		}
-		list, err := r.ownerReferences(reference, ns)
+		refs, err := r.ownerReferences(reference, ns)
 		if err != nil {
 			return false
 		}
-		for i := 0; i < len(list); i++ {
-			ref := list[i]
-			if rule.Kind == ref.Kind && rule.Name == ref.Name && ns == rule.Namespace {
-				return true
-			}
+		list = append(list, refs...)
+	}
+	for _, item := range list {
+		if rule.Kind == item.Kind && rule.Name == item.Name && ns == rule.Namespace {
+			return true
 		}
 	}
 	return false
