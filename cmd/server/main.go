@@ -197,13 +197,12 @@ func main() {
 		Scheme:     mgr.GetScheme(),
 		CustomerID: customerID,
 	}
-
+	podController.ExcludeRules = excludeRules(mgr.GetClient())
 	if err = podController.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PodRecord")
 		os.Exit(1)
 	}
 
-	podController.ExcludeRules = excludeRules(mgr.GetClient())
 	if err = mgr.GetFieldIndexer().IndexField(ctx, &eciv1.PodRecord{}, constants.FieldSelectorPodName, func(object client.Object) []string {
 		podRecord, ok := object.(*eciv1.PodRecord)
 		if !ok {
