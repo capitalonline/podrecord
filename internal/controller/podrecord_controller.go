@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"slices"
-	"strconv"
 	"time"
 )
 
@@ -291,15 +290,15 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 	}
 	nodeMem := float64(node.Status.Capacity.Memory().Value()) / 1024 / 1024 / 1024
 	nodeCpu := node.Status.Capacity.Cpu()
-	cpuLimit := utils.PodCpuLimit(pod)
+	cpuLimit := float64(utils.PodCpuLimit(pod)) / 1000
 	if cpuLimit == 0 {
-		cpuLimit = nodeCpu.Value()
+		cpuLimit = float64(nodeCpu.Value())
 	}
 	memLimit := float64(utils.PodMemLimit(pod)) / 1024 / 1024 / 1024
 	if memLimit == 0 {
 		memLimit = nodeMem
 	}
-	cpuRequest := utils.PodCpuRequest(pod)
+	cpuRequest := float64(utils.PodCpuRequest(pod)) / 1000
 	memRequest := float64(utils.PodMemRequest(pod)) / 1024 / 1024 / 1024
 	//memRequest = float64(memRequest)
 	return &eciv1.PodRecord{
@@ -309,17 +308,19 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 		},
 
 		Spec: eciv1.PodRecordSpec{
-			UserID:     r.CustomerID,
-			PodID:      string(pod.UID),
-			PodName:    pod.Name,
-			CpuRequest: strconv.FormatInt(cpuRequest, 10),
+			UserID:  r.CustomerID,
+			PodID:   string(pod.UID),
+			PodName: pod.Name,
+			//CpuRequest: strconv.FormatInt(cpuRequest, 10),
+			CpuRequest: fmt.Sprintf("%.2f", utils.Round(cpuRequest, 2)),
 			MemRequest: fmt.Sprintf("%.2f", utils.Round(memRequest, 2)),
-			CpuLimit:   strconv.FormatInt(cpuLimit, 10),
-			MemLimit:   fmt.Sprintf("%.2f", utils.Round(memLimit, 2)),
-			Gpu:        utils.PodGpuNvidia(pod),
-			Node:       node.Name,
-			NodeMem:    fmt.Sprintf("%.2f", utils.Round(nodeMem, 2)),
-			NodeCpu:    nodeCpu.String(),
+			//CpuLimit:   strconv.FormatInt(cpuLimit, 10),
+			CpuLimit: fmt.Sprintf("%.2f", utils.Round(cpuLimit, 2)),
+			MemLimit: fmt.Sprintf("%.2f", utils.Round(memLimit, 2)),
+			Gpu:      utils.PodGpuNvidia(pod),
+			Node:     node.Name,
+			NodeMem:  fmt.Sprintf("%.2f", utils.Round(nodeMem, 2)),
+			NodeCpu:  nodeCpu.String(),
 			//StartTime:  pod.Status.StartTime.Time.Format(constants.TimeTemplate),
 			StartTime: time.Now().Format(constants.TimeTemplate),
 		},

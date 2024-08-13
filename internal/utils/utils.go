@@ -8,7 +8,7 @@ import (
 func PodCpuLimit(pod v1.Pod) int64 {
 	var cpu int64
 	for _, container := range pod.Spec.Containers {
-		cpu += container.Resources.Limits.Cpu().Value()
+		cpu += container.Resources.Limits.Cpu().MilliValue()
 	}
 	return cpu
 }
@@ -16,7 +16,7 @@ func PodCpuLimit(pod v1.Pod) int64 {
 func PodCpuRequest(pod v1.Pod) int64 {
 	var cpu int64
 	for _, container := range pod.Spec.Containers {
-		cpu += container.Resources.Requests.Cpu().Value()
+		cpu += container.Resources.Requests.Cpu().MilliValue()
 	}
 	return cpu
 }
