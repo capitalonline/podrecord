@@ -52,6 +52,9 @@ func (PodStatusChangePredicate) Update(e event.UpdateEvent) bool {
 		logger.Error(nil, "Update event has no new object for update", "event", e)
 		return false
 	}
+	if !reflect.DeepEqual(oldPod.Status.Phase, newPod.Status.Phase) {
+		return true
+	}
 
-	return !reflect.DeepEqual(oldPod.Status.Phase, newPod.Status.Phase)
+	return !reflect.DeepEqual(oldPod.Status.ContainerStatuses, newPod.Status.ContainerStatuses)
 }

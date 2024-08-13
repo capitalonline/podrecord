@@ -81,9 +81,10 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, fmt.Errorf("failed to get podrecord, error: %v", err)
 		}
 	}
+	status := podStatus(pod)
 
-	switch pod.Status.Phase {
-	case v1.PodRunning:
+	switch status {
+	case constants.PodStatusRunning:
 		if record.Name != "" {
 			return ctrl.Result{}, nil
 		}
@@ -129,12 +130,22 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, nil
 		}
 		record.Spec.EndTime = time.Now().Format(constants.TimeTemplate)
-		record.Spec.EndStatus = string(pod.Status.Phase)
+		record.Spec.EndStatus = status
 		if pod.Status.Phase == "" {
 			record.Spec.EndStatus = constants.PodStatusDeleted
 		}
 		if err := r.Update(ctx, &record); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to update eci-record, error: %v", err)
+		}
+		if pod.Labels == nil {
+			return ctrl.Result{}, nil
+		}
+		patch := client.StrategicMergeFrom(pod.DeepCopy())
+		delete(pod.Labels, constants.LabelPodEciRecord)
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			return client.IgnoreNotFound(r.Patch(ctx, &pod, patch))
+		}); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to update pod to add label, error: %v", err)
 		}
 		//klog.Infof("record %s update success", record.Name)
 	}
@@ -310,9 +321,26 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 			Node:       node.Name,
 			NodeMem:    fmt.Sprintf("%.2f", utils.Round(nodeMem, 2)),
 			NodeCpu:    nodeCpu.String(),
-			StartTime:  pod.Status.StartTime.Time.Format(constants.TimeTemplate),
+			//StartTime:  pod.Status.StartTime.Time.Format(constants.TimeTemplate),
+			StartTime: time.Now().Format(constants.TimeTemplate),
 		},
 	}, nil
+}
+
+func containersRunning(pod v1.Pod) bool {
+	for _, container := range pod.Status.ContainerStatuses {
+		if container.State.Running == nil {
+			return false
+		}
+	}
+	return true
+}
+
+func podStatus(pod v1.Pod) string {
+	if !containersRunning(pod) {
+		return constants.StatusContainerNotRunning
+	}
+	return string(pod.Status.Phase)
 }
 
 type ExcludeRules struct {
