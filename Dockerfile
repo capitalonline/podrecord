@@ -35,6 +35,6 @@ FROM ubuntu:20.04
 WORKDIR /
 COPY --from=builder /workspace/podrecord/manager .
 COPY --from=builder /workspace/podrecord/tool .
-USER 65532:65532
+#USER 65532:65532
 
 CMD ["/manager"]
