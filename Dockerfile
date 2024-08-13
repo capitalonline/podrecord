@@ -32,9 +32,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o tool cmd/tools/main.go
 FROM ubuntu:20.04
 
 #FROM gcr.io/distroless/static:nonroot
-WORKDIR /
+WORKDIR /go/podrecord
 COPY --from=builder /workspace/podrecord/manager .
 COPY --from=builder /workspace/podrecord/tool .
 #USER 65532:65532
 
-CMD ["/manager"]
+CMD ["/go/podrecord/manager"]
