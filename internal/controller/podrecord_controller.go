@@ -263,7 +263,6 @@ func (r *PodRecordReconciler) ownerReferences(reference metav1.OwnerReference, n
 }
 
 func (r *PodRecordReconciler) matchReferences(references []metav1.OwnerReference, rule ExcludeRules, ns string) bool {
-	defer fmt.Print("")
 	list := make([]metav1.OwnerReference, 0)
 	for _, reference := range references {
 		if reference.Kind == constants.ResourceNode {
