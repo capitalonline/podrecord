@@ -59,6 +59,25 @@ rules:
       - "update"
       - "create"
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podrecord-service
+  namespace: kube-system
+  labels:
+    app: podrecord-manager
+spec:
+#  clusterIP: None
+  selector:
+    app: podrecord-manager
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8081
+      name: podrecord-manager
+#  internalTrafficPolicy: Cluster
+  type: ClusterIP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -79,14 +98,16 @@ spec:
           args:
             - /go/podrecord/manager
             - -customer-id=xxxx
-          image: harbor-dev.yun-paas.com/test/podrecord:v1.0.0
+          image: harbor-dev.yun-paas.com/test/podrecord:v1.0.1
           imagePullPolicy: Always
           resources:
             requests:
               cpu: 100m
               memory: 100Mi
-      dnsPolicy: Default
-      hostNetwork: true
+          ports:
+            - containerPort: 8081
+      dnsPolicy: ClusterFirst
+#      hostNetwork: true
       serviceAccountName: podrecord-manager
       affinity:
         nodeAffinity:
@@ -123,3 +144,6 @@ spec:
           operator: Exists
         - key: node-role.kubernetes.io/master
           operator: Exists
+
+
+

@@ -10,8 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"log"
-	"os"
 )
 
 func main() {
@@ -19,11 +19,13 @@ func main() {
 }
 
 func ExportRecords() {
-	//kubeconfig := "/etc/kubernetes/admin.conf"
+	kubeconfig := "/etc/kubernetes/admin.conf"
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		fmt.Printf("Error building kubeconfig: %s\n", err.Error())
-		os.Exit(1)
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			log.Fatalf("Error building kubeconfig")
+		}
 	}
 
 	dynamicClient, err := dynamic.NewForConfig(config)
@@ -47,7 +49,6 @@ func ExportRecords() {
 		if err = runtime.DefaultUnstructuredConverter.FromUnstructured(cr.Object, &record); err != nil {
 			log.Fatalf("Error convert CRD: %s", err.Error())
 		}
-		fmt.Printf("record is %v", record)
 		records = append(records, record)
 	}
 	if err = WriteToExcel(records); err != nil {
@@ -58,14 +59,13 @@ func ExportRecords() {
 func WriteToExcel(records []eciv1.PodRecord) error {
 	file := excelize.NewFile()
 	defer file.Close()
-	_, err := file.NewSheet("eci-podrecord")
-	if err != nil {
+	if err := file.SetSheetName(file.GetSheetName(0), "eci-podrecord"); err != nil {
 		return err
 	}
 	row := []string{
 		"UserID", "PodID", "PodName", "CpuRequest", "MemRequest", "CpuLimit", "MemLimit", "Gpu", "Node", "NodeMem", "NodeCpu", "StartTime", "EndTime", "EndStatus",
 	}
-	if err = file.SetSheetRow("eci-podrecord", "A1", &row); err != nil {
+	if err := file.SetSheetRow(file.GetSheetName(0), "A1", &row); err != nil {
 		return err
 	}
 	for i := 0; i < len(records); i++ {
@@ -90,9 +90,9 @@ func WriteToExcel(records []eciv1.PodRecord) error {
 			record.Spec.EndTime,
 			record.Spec.EndStatus,
 		}
-		if err = file.SetSheetRow("eci-podrecord", cell, &row); err != nil {
+		if err = file.SetSheetRow(file.GetSheetName(0), cell, &row); err != nil {
 			return err
 		}
 	}
-	return file.SaveAs("/root/eci-podrecord.xlsx")
+	return file.SaveAs("./eci-podrecord.xlsx")
 }
