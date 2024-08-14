@@ -122,7 +122,7 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			slices.SortFunc(records.Items, func(a, b eciv1.PodRecord) int {
 				return cmp.Compare(a.Name, b.Name)
 			})
-			record = records.Items[0]
+			record = records.Items[len(records.Items)-1]
 		}
 		if record.Name == "" {
 			klog.Infof("update pod return nil %s, record name is nil", pod.Name)
