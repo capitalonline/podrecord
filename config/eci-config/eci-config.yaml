@@ -164,5 +164,10 @@ data:
         "kind": "Deployment",
         "name": "eks-cloud-controller-manager",
         "namespace": "kube-system"
+    },
+    {
+        "kind": "CronJob",
+        "name": "podrecord-service-healthcheck",
+        "namespace": "kube-system"
     }
 ]'

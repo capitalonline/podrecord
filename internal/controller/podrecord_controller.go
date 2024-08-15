@@ -24,6 +24,7 @@ import (
 	"github.com/capitalonline/eci-manager/internal/constants"
 	"github.com/capitalonline/eci-manager/internal/utils"
 	appv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -234,6 +235,18 @@ func (r *PodRecordReconciler) ownerReferences(reference metav1.OwnerReference, n
 			return nil, err
 		}
 		references = ds.OwnerReferences
+	case constants.ResourceJob:
+		job := batchv1.Job{}
+		if err := r.Get(ctx, nsName, &job); err != nil {
+			return nil, err
+		}
+		references = job.OwnerReferences
+	case constants.ResourceCronJob:
+		cron := batchv1.CronJob{}
+		if err := r.Get(ctx, nsName, &cron); err != nil {
+			return nil, err
+		}
+		references = cron.OwnerReferences
 	}
 
 	list := make([]metav1.OwnerReference, 0)
