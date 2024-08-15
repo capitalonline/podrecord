@@ -63,7 +63,7 @@ func WriteToExcel(records []eciv1.PodRecord) error {
 		return err
 	}
 	row := []string{
-		"UserID", "PodID", "PodName", "CpuRequest", "MemRequest", "CpuLimit", "MemLimit", "Gpu", "Node", "NodeMem", "NodeCpu", "StartTime", "EndTime", "EndStatus",
+		"RecordName", "RecordNameSpace", "UserID", "PodID", "PodName", "CpuRequest", "MemRequest", "CpuLimit", "MemLimit", "Gpu", "Node", "NodeMem", "NodeCpu", "StartTime", "EndTime", "EndStatus",
 	}
 	if err := file.SetSheetRow(file.GetSheetName(0), "A1", &row); err != nil {
 		return err
@@ -75,6 +75,8 @@ func WriteToExcel(records []eciv1.PodRecord) error {
 		}
 		record := records[i]
 		row := []string{
+			record.Name,
+			record.Namespace,
 			record.Spec.UserID,
 			record.Spec.PodID,
 			record.Spec.PodName,
