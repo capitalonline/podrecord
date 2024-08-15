@@ -129,6 +129,10 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			klog.Infof("update pod return nil %s, record name is nil", pod.Name)
 			return ctrl.Result{}, nil
 		}
+		if record.Spec.EndTime != "" {
+			klog.Infof("pod %s/% already ended, end status %s", pod.Namespace, pod.Name, record.Spec.EndStatus)
+			return ctrl.Result{}, nil
+		}
 		record.Spec.EndTime = time.Now().Format(constants.TimeTemplate)
 		record.Spec.EndStatus = status
 		if pod.Status.Phase == "" {
