@@ -350,7 +350,7 @@ func containersRunning(pod v1.Pod) bool {
 }
 
 func podStatus(pod v1.Pod) string {
-	if !containersRunning(pod) {
+	if !containersRunning(pod) && pod.Status.Phase == constants.PodStatusRunning {
 		return constants.StatusContainerNotRunning
 	}
 	return string(pod.Status.Phase)
