@@ -58,6 +58,15 @@ rules:
       - "watch"
       - "update"
       - "create"
+  - apiGroups:
+      - "batch"
+    resources:
+      - "cronjobs"
+      - "jobs"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
 ---
 apiVersion: v1
 kind: Service
@@ -98,7 +107,7 @@ spec:
           args:
             - /go/podrecord/manager
             - -customer-id=
-          image: harbor-dev.yun-paas.com/test/podrecord:v1.0.1
+          image: harbor-dev.yun-paas.com/test/podrecord:v1.0.4
           imagePullPolicy: Always
           resources:
             requests:

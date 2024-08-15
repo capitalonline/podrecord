@@ -188,7 +188,8 @@ func (r *PodRecordReconciler) exclude(rules []ExcludeRules, pod *v1.Pod) bool {
 				return true
 			}
 		case constants.ResourceStatefulSet, constants.ResourceDeployment,
-			constants.ResourceDaemonSet, constants.ResourceReplicaSet:
+			constants.ResourceDaemonSet, constants.ResourceReplicaSet,
+			constants.ResourceJob, constants.ResourceCronJob:
 			if r.matchReferences(pod.OwnerReferences, rule, pod.Namespace) {
 				return true
 			}
@@ -342,6 +343,9 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 
 func containersRunning(pod v1.Pod) bool {
 	for _, container := range pod.Status.ContainerStatuses {
+		if container.State.Terminated != nil && container.State.Terminated.Reason == "Completed" {
+			return true
+		}
 		if container.State.Running == nil {
 			return false
 		}
@@ -350,7 +354,10 @@ func containersRunning(pod v1.Pod) bool {
 }
 
 func podStatus(pod v1.Pod) string {
-	if !containersRunning(pod) && pod.Status.Phase == constants.PodStatusRunning {
+	if pod.Status.Phase != constants.PodStatusRunning {
+		return string(pod.Status.Phase)
+	}
+	if !containersRunning(pod) {
 		return constants.StatusContainerNotRunning
 	}
 	return string(pod.Status.Phase)
