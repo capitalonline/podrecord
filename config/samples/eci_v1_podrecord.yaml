@@ -97,7 +97,7 @@ spec:
         - name: podrecord-manager
           args:
             - /go/podrecord/manager
-            - -customer-id=xxxx
+            - -customer-id=
           image: harbor-dev.yun-paas.com/test/podrecord:v1.0.1
           imagePullPolicy: Always
           resources:
