@@ -76,7 +76,7 @@ metadata:
   labels:
     app: podrecord-manager
 spec:
-#  clusterIP: None
+  clusterIP: None
   selector:
     app: podrecord-manager
   ports:
