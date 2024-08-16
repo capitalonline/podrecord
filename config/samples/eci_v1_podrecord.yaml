@@ -107,7 +107,7 @@ spec:
           args:
             - /go/podrecord/manager
             - -customer-id=
-          image: harbor-dev.yun-paas.com/test/podrecord:v1.0.7
+          image: registry-bj.capitalonline.net/eks/podrecord:v1.0.0
           imagePullPolicy: Always
           ports:
             - containerPort: 8081
