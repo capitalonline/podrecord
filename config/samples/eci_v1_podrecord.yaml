@@ -109,10 +109,6 @@ spec:
             - -customer-id=
           image: harbor-dev.yun-paas.com/test/podrecord:v1.0.7
           imagePullPolicy: Always
-          resources:
-            requests:
-              cpu: 100m
-              memory: 100Mi
           ports:
             - containerPort: 8081
       dnsPolicy: ClusterFirst
