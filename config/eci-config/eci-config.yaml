@@ -126,6 +126,11 @@ data:
         "namespace": "monitoring"
     },
     {
+        "kind": "StatefulSet",
+        "name": "grafana",
+        "namespace": "monitoring"
+    },
+    {
         "kind": "Deployment",
         "name": "kube-state-metrics",
         "namespace": "monitoring"
@@ -169,5 +174,10 @@ data:
         "kind": "CronJob",
         "name": "podrecord-service-healthcheck",
         "namespace": "kube-system"
+    },
+    {
+        "kind": "Deployment",
+        "name": "local-path-provisioner",
+        "namespace": "local-path-storage"
     }
 ]'

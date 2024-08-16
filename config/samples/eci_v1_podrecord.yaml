@@ -107,7 +107,7 @@ spec:
           args:
             - /go/podrecord/manager
             - -customer-id=
-          image: harbor-dev.yun-paas.com/test/podrecord:v1.0.4
+          image: harbor-dev.yun-paas.com/test/podrecord:v1.0.7
           imagePullPolicy: Always
           resources:
             requests:

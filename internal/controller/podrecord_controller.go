@@ -130,7 +130,7 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, nil
 		}
 		if record.Spec.EndTime != "" {
-			klog.Infof("pod %s/% already ended, end status %s", pod.Namespace, pod.Name, record.Spec.EndStatus)
+			klog.Infof("pod %s/%s already ended, end status %s", pod.Namespace, pod.Name, record.Spec.EndStatus)
 			return ctrl.Result{}, nil
 		}
 		record.Spec.EndTime = time.Now().Format(constants.TimeTemplate)
@@ -151,7 +151,7 @@ func (r *PodRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to update pod to add label, error: %v", err)
 		}
-		//klog.Infof("record %s update success", record.Name)
+		klog.Infof("record %s update success", record.Name)
 	}
 	return ctrl.Result{}, nil
 }
@@ -168,8 +168,6 @@ func (r *PodRecordReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		if r.exclude(r.ExcludeRules, pod) {
 			return nil
 		}
-		//bytes, _ := json.Marshal(pod)
-		//klog.Infof("pod %s dont exclude", string(bytes))
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				Namespace: pod.Namespace,
@@ -318,7 +316,6 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 	}
 	cpuRequest := float64(utils.PodCpuRequest(pod)) / 1000
 	memRequest := float64(utils.PodMemRequest(pod)) / 1024 / 1024 / 1024
-	//memRequest = float64(memRequest)
 	return &eciv1.PodRecord{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%d", time.Now().UnixNano()),
@@ -326,21 +323,18 @@ func (r *PodRecordReconciler) newRecord(pod v1.Pod) (*eciv1.PodRecord, error) {
 		},
 
 		Spec: eciv1.PodRecordSpec{
-			UserID:  r.CustomerID,
-			PodID:   string(pod.UID),
-			PodName: pod.Name,
-			//CpuRequest: strconv.FormatInt(cpuRequest, 10),
+			UserID:     r.CustomerID,
+			PodID:      string(pod.UID),
+			PodName:    pod.Name,
 			CpuRequest: fmt.Sprintf("%.2f", utils.Round(cpuRequest, 2)),
 			MemRequest: fmt.Sprintf("%.2f", utils.Round(memRequest, 2)),
-			//CpuLimit:   strconv.FormatInt(cpuLimit, 10),
-			CpuLimit: fmt.Sprintf("%.2f", utils.Round(cpuLimit, 2)),
-			MemLimit: fmt.Sprintf("%.2f", utils.Round(memLimit, 2)),
-			Gpu:      utils.PodGpuNvidia(pod),
-			Node:     node.Name,
-			NodeMem:  fmt.Sprintf("%.2f", utils.Round(nodeMem, 2)),
-			NodeCpu:  nodeCpu.String(),
-			//StartTime:  pod.Status.StartTime.Time.Format(constants.TimeTemplate),
-			StartTime: time.Now().Format(constants.TimeTemplate),
+			CpuLimit:   fmt.Sprintf("%.2f", utils.Round(cpuLimit, 2)),
+			MemLimit:   fmt.Sprintf("%.2f", utils.Round(memLimit, 2)),
+			Gpu:        utils.PodGpuNvidia(pod),
+			Node:       node.Name,
+			NodeMem:    fmt.Sprintf("%.2f", utils.Round(nodeMem, 2)),
+			NodeCpu:    nodeCpu.String(),
+			StartTime:  time.Now().Format(constants.TimeTemplate),
 		},
 	}, nil
 }
